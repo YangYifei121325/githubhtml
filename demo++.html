@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>防抖 vs 节流计数器</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4F46E5',
+            secondary: '#10B981',
+            warning: '#F59E0B',
+            danger: '#EF4444',
+          },
+          fontFamily: {
+            inter: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style type="text/tailwindcss">
+    @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .animate-pulse-slow {
+                animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            }
+        }
+    </style>
+</head>
+
+<body class="font-inter bg-gray-50 min-h-screen flex flex-col items-center justify-center p-4">
+  <div class="max-w-2xl w-full bg-white rounded-xl shadow-lg p-8">
+    <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">防抖(Debounce) vs 节流(Throttle)</h1>
+
+    <div class="grid md:grid-cols-2 gap-8">
+      <!-- 防抖计数器 -->
+      <div class="bg-gray-50 rounded-lg p-6 shadow-sm">
+        <h2 class="text-xl font-semibold mb-4 text-primary flex items-center">
+          <i class="fa fa-hand-paper-o mr-2"></i>防抖计数器
+        </h2>
+        <p class="text-gray-600 mb-4 text-sm">
+          高频率点击后，仅在最后一次点击<strong class="text-primary">2秒后</strong>更新计数
+        </p>
+
+        <div class="flex items-center justify-center mb-6">
+          <button id="debounce-btn"
+            class="bg-primary hover:bg-primary/90 text-white font-medium py-3 px-6 rounded-lg transition-all transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg">
+            <i class="fa fa-plus mr-2"></i>点击
+          </button>
+        </div>
+
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500">实际点击次数:</p>
+            <p id="actual-clicks" class="text-2xl font-bold text-gray-800">0</p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-500">防抖显示次数:</p>
+            <p id="debounce-display" class="text-2xl font-bold text-primary">0</p>
+          </div>
+        </div>
+
+        <div id="debounce-status" class="mt-4 text-sm text-gray-500 italic text-center"></div>
+      </div>
+
+      <!-- 节流计数器 -->
+      <div class="bg-gray-50 rounded-lg p-6 shadow-sm">
+        <h2 class="text-xl font-semibold mb-4 text-secondary flex items-center">
+          <i class="fa fa-clock-o mr-2"></i>节流计数器
+        </h2>
+        <p class="text-gray-600 mb-4 text-sm">
+          高频率点击时，每<strong class="text-secondary">2秒</strong>更新一次计数
+        </p>
+
+        <div class="flex items-center justify-center mb-6">
+          <button id="throttle-btn"
+            class="bg-secondary hover:bg-secondary/90 text-white font-medium py-3 px-6 rounded-lg transition-all transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg">
+            <i class="fa fa-plus mr-2"></i>点击
+          </button>
+        </div>
+
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500">实际点击次数:</p>
+            <p id="throttle-actual-clicks" class="text-2xl font-bold text-gray-800">0</p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-500">节流显示次数:</p>
+            <p id="throttle-display" class="text-2xl font-bold text-secondary">0</p>
+          </div>
+        </div>
+
+        <div id="throttle-status" class="mt-4 text-sm text-gray-500 italic text-center"></div>
+      </div>
+    </div>
+
+    <div class="mt-8 bg-gray-100 p-4 rounded-lg">
+      <h3 class="font-semibold mb-2 text-gray-800">说明:</h3>
+      <ul class="list-disc list-inside text-gray-600 text-sm space-y-1">
+        <li><span class="text-primary">防抖</span>: 当你停止点击后，等待2秒才会更新显示的计数</li>
+        <li><span class="text-secondary">节流</span>: 无论你点击多快，每2秒才会更新一次显示的计数</li>
+        <li>尝试快速连续点击按钮，观察两种方式的区别</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    // 防抖函数实现
+    function debounce(func, wait) {
+      let timeout;
+
+      return function () {
+        const context = this;
+        const args = arguments;
+
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+          func.apply(context, args);
+        }, wait);
+      };
+    }
+
+    // 节流函数实现
+    function throttle(func, limit) {
+      let lastExecTime = 0;
+
+      return function () {
+        const context = this;
+        const args = arguments;
+        const now = Date.now();
+
+        if (now - lastExecTime >= limit) {
+          func.apply(context, args);
+          lastExecTime = now;
+        }
+      };
+    }
+
+    // 防抖计数器逻辑
+    const debounceBtn = document.getElementById('debounce-btn');
+    const actualClicks = document.getElementById('actual-clicks');
+    const debounceDisplay = document.getElementById('debounce-display');
+    const debounceStatus = document.getElementById('debounce-status');
+
+    let debounceCount = 0;
+    let debounceActualCount = 0;
+
+    // 创建防抖版本的点击处理函数，延迟2000ms
+    const debouncedClick = debounce(() => {
+      debounceCount++;
+      debounceDisplay.textContent = debounceCount.toString();
+      debounceStatus.textContent = `已更新 (${new Date().toLocaleTimeString()})`;
+
+      // 添加动画效果
+      debounceDisplay.classList.add('text-primary/70');
+      setTimeout(() => {
+        debounceDisplay.classList.remove('text-primary/70');
+      }, 300);
+    }, 2000);
+
+    debounceBtn.addEventListener('click', () => {
+      debounceActualCount++;
+      actualClicks.textContent = debounceActualCount.toString();
+      debouncedClick();
+
+      // 更新状态
+      debounceStatus.textContent = `等待中... (${Math.ceil(2000 / 1000)}秒后更新)`;
+
+      // 添加按钮点击效果
+      debounceBtn.classList.add('scale-95');
+      setTimeout(() => {
+        debounceBtn.classList.remove('scale-95');
+      }, 100);
+    });
+
+    // 节流计数器逻辑
+    const throttleBtn = document.getElementById('throttle-btn');
+    const throttleActualClicks = document.getElementById('throttle-actual-clicks');
+    const throttleDisplay = document.getElementById('throttle-display');
+    const throttleStatus = document.getElementById('throttle-status');
+
+    let throttleCount = 0;
+    let throttleActualCount = 0;
+    let lastThrottleTime = 0;
+
+    // 创建节流版本的点击处理函数，限制2000ms
+    const throttledClick = throttle(() => {
+      throttleCount++;
+      throttleDisplay.textContent = throttleCount.toString();
+      throttleStatus.textContent = `已更新 (${new Date().toLocaleTimeString()})`;
+
+      // 添加动画效果
+      throttleDisplay.classList.add('text-secondary/70');
+      setTimeout(() => {
+        throttleDisplay.classList.remove('text-secondary/70');
+      }, 300);
+    }, 2000);
+
+    throttleBtn.addEventListener('click', () => {
+      throttleActualCount++;
+      throttleActualClicks.textContent = throttleActualCount.toString();
+      throttledClick();
+
+      // 更新状态
+      const now = Date.now();
+      const remaining = Math.max(0, 2000 - (now - lastThrottleTime));
+      throttleStatus.textContent = `冷却中... (${Math.ceil(remaining / 1000)}秒后可更新)`;
+
+      // 更新最后执行时间
+      if (now - lastThrottleTime >= 2000) {
+        lastThrottleTime = now;
+      }
+
+      // 添加按钮点击效果
+      throttleBtn.classList.add('scale-95');
+      setTimeout(() => {
+        throttleBtn.classList.remove('scale-95');
+      }, 100);
+    });
+  </script>
+</body>
+
+</html>
